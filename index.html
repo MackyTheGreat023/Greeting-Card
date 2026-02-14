@@ -21,8 +21,7 @@ body {
 .heart {
     position: absolute;
     color: rgba(255,255,255,0.8);
-    font-size: 20px;
-    animation: floatUp 6s linear infinite;
+    animation: floatUp linear forwards;
 }
 
 @keyframes floatUp {
@@ -42,7 +41,6 @@ body {
     position: relative;
     transform-style: preserve-3d;
     transition: transform 1s;
-    cursor: pointer;
 }
 
 .card.open {
@@ -60,17 +58,19 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .front {
     background: white;
     color: #e91e63;
+    cursor: pointer;
 }
 
 .back {
     background: #fff0f5;
     transform: rotateY(180deg);
-    padding: 20px;
     text-align: center;
 }
 
@@ -83,6 +83,7 @@ input {
     border-radius: 5px;
     border: 1px solid #ccc;
     margin-top: 10px;
+    width: 80%;
 }
 
 button {
@@ -100,7 +101,6 @@ button:hover {
 }
 
 .share-btn {
-    margin-top: 15px;
     background: #ff4081;
 }
 </style>
@@ -109,8 +109,8 @@ button:hover {
 <body>
 
 <div class="card-container">
-    <div class="card" onclick="openCard()">
-        <div class="card-face front">
+    <div class="card" id="card">
+        <div class="card-face front" id="cardFront">
             <h2>❤️ Tap to Open ❤️</h2>
             <p>Someone loves you...</p>
         </div>
@@ -122,10 +122,10 @@ button:hover {
                 Every moment with you is magical.
             </p>
 
-            <input type="text" id="nameInput" placeholder="Enter your love's name">
-            <button onclick="personalize(event)">Personalize</button>
+            <input type="text" id="nameInput" placeholder="Enter your love's name" onclick="event.stopPropagation()">
+            <button id="personalizeBtn">Personalize</button>
 
-            <button class="share-btn" onclick="shareCard(event)">
+            <button class="share-btn" id="shareBtn">
                 💌 Share This Card
             </button>
         </div>
@@ -133,50 +133,56 @@ button:hover {
 </div>
 
 <!-- Romantic Background Music -->
-<audio id="bgMusic" loop>
+<audio id="bgMusic" loop preload="auto">
     <source src="https://cdn.pixabay.com/download/audio/2022/02/23/audio_115b9c1f14.mp3?filename=romantic-love-114627.mp3" type="audio/mpeg">
 </audio>
 
 <script>
+const card = document.getElementById("card");
+const cardFront = document.getElementById("cardFront");
+const personalizeBtn = document.getElementById("personalizeBtn");
+const shareBtn = document.getElementById("shareBtn");
+const nameInput = document.getElementById("nameInput");
+const message = document.getElementById("message");
+const music = document.getElementById("bgMusic");
+
 let opened = false;
 
-function openCard() {
-    const card = document.querySelector(".card");
-    card.classList.toggle("open");
+/* Open card ONLY when clicking front */
+cardFront.addEventListener("click", () => {
+    card.classList.add("open");
 
     if (!opened) {
-        document.getElementById("bgMusic").play();
+        // Fade-in music
+        music.volume = 0;
+        music.play().then(() => {
+            let fade = setInterval(() => {
+                if (music.volume < 0.4) {
+                    music.volume += 0.02;
+                } else {
+                    clearInterval(fade);
+                }
+            }, 200);
+        }).catch(() => {}); // ignore autoplay errors
         opened = true;
     }
-}
+});
 
-/* Floating Hearts */
-function createHearts() {
-    const heart = document.createElement("div");
-    heart.classList.add("heart");
-    heart.innerHTML = "❤";
-    heart.style.left = Math.random() * 100 + "vw";
-    heart.style.fontSize = (Math.random() * 20 + 10) + "px";
-    heart.style.animationDuration = (Math.random() * 3 + 3) + "s";
-    document.body.appendChild(heart);
+/* Prevent flipping when clicking inside back */
+card.querySelector(".back").addEventListener("click", (e) => {
+    e.stopPropagation();
+});
 
-    setTimeout(() => heart.remove(), 6000);
-}
-
-setInterval(createHearts, 300);
-
-function personalize(event) {
-    event.stopPropagation();
-    const name = document.getElementById("nameInput").value;
-    if (name.trim() !== "") {
-        document.getElementById("message").innerText =
-            "Happy Valentine's Day, " + name + " ❤️";
+/* Personalize */
+personalizeBtn.addEventListener("click", () => {
+    const name = nameInput.value.trim();
+    if (name !== "") {
+        message.innerText = `Happy Valentine's Day, ${name} ❤️`;
     }
-}
+});
 
-function shareCard(event) {
-    event.stopPropagation();
-
+/* Share */
+shareBtn.addEventListener("click", () => {
     if (navigator.share) {
         navigator.share({
             title: "Happy Valentine's Day ❤️",
@@ -187,7 +193,24 @@ function shareCard(event) {
         navigator.clipboard.writeText(window.location.href);
         alert("Link copied! Send it to your love ❤️");
     }
+});
+
+/* Floating Hearts */
+function createHearts() {
+    const heart = document.createElement("div");
+    heart.classList.add("heart");
+    heart.innerHTML = "❤";
+
+    heart.style.left = Math.random() * 100 + "vw";
+    heart.style.fontSize = (Math.random() * 20 + 10) + "px";
+    heart.style.animationDuration = (Math.random() * 3 + 3) + "s";
+
+    document.body.appendChild(heart);
+
+    setTimeout(() => heart.remove(), 6000);
 }
+
+setInterval(createHearts, 400);
 </script>
 
 </body>
